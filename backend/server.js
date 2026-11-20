@@ -54,16 +54,31 @@ function splitKey2of3(keyBuf) {
   ];
 }
 
+function parseShare(share, label) {
+  if (typeof share !== 'string') {
+    throw new Error(`${label} must be a complete Shamir share in index:hex format.`);
+  }
+
+  const match = share.trim().match(/(?:^|:\s*)([1-3]):([a-f0-9]{64})$/i);
+  if (!match) {
+    throw new Error(`${label} must include the full share, such as 1:<64 hex characters>.`);
+  }
+
+  return { x: Number(match[1]), bytes: Buffer.from(match[2], 'hex') };
+}
+
 function combineShares(shareA, shareB) {
-  const [x1Str, hex1] = shareA.split(':');
-  const [x2Str, hex2] = shareB.split(':');
-  const x1 = parseInt(x1Str, 10), x2 = parseInt(x2Str, 10);
-  const b1 = Buffer.from(hex1, 'hex'), b2 = Buffer.from(hex2, 'hex');
-  const out = Buffer.alloc(b1.length);
-  const l1 = gfMul(x2, gfInv(x1 ^ x2));
-  const l2 = gfMul(x1, gfInv(x2 ^ x1));
-  for (let i = 0; i < b1.length; i++) {
-    out[i] = gfMul(b1[i], l1) ^ gfMul(b2[i], l2);
+  const first = parseShare(shareA, 'Share A');
+  const second = parseShare(shareB, 'Share B');
+  if (first.x === second.x) {
+    throw new Error('Enter two different shares, such as shares 1 and 2.');
+  }
+
+  const out = Buffer.alloc(first.bytes.length);
+  const l1 = gfMul(second.x, gfInv(first.x ^ second.x));
+  const l2 = gfMul(first.x, gfInv(second.x ^ first.x));
+  for (let i = 0; i < first.bytes.length; i++) {
+    out[i] = gfMul(first.bytes[i], l1) ^ gfMul(second.bytes[i], l2);
   }
   return out;
 }
@@ -170,8 +185,21 @@ app.post('/api/dat/verify', async (req, res) => {
     const record = offChainStore.get(nfTokenID);
     if (!record) return res.status(404).json({ error: 'Off-chain record not found or crypto-shredded' });
 
-    const reconstructedKey = combineShares(shareA, shareB);
-    let decryptedFHIR = decryptFHIR(record.encryptedPayload, reconstructedKey);
+    let reconstructedKey;
+    try {
+      reconstructedKey = combineShares(shareA, shareB);
+    } catch (err) {
+      return res.status(400).json({ error: err.message });
+    }
+
+    let decryptedFHIR;
+    try {
+      decryptedFHIR = decryptFHIR(record.encryptedPayload, reconstructedKey);
+    } catch {
+      return res.status(400).json({
+        error: 'These shares could not decrypt this directive. Check that you entered two valid shares for this token.'
+      });
+    }
 
     if (simulateTampering) {
       decryptedFHIR = { ...decryptedFHIR, invasiveVentilation: !decryptedFHIR.invasiveVentilation };
