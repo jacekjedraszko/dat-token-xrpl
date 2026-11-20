@@ -4,7 +4,8 @@ import {
   Trash2, ExternalLink, Activity, Lock, RefreshCw
 } from 'lucide-react';
 
-const API_URL = 'http://localhost:3001/api';
+const API_URL = import.meta.env.VITE_API_URL
+  || `${window.location.protocol}//${window.location.hostname}:3001/api`;
 
 interface WalletInfo {
   address: string;
@@ -50,6 +51,7 @@ export default function App() {
   const [revokedTx, setRevokedTx] = useState<{ burnTxHash: string; explorerUrl: string } | null>(null);
 
   // ER Console State
+  const [erCredentials, setErCredentials] = useState({ nfTokenID: '', shareA: '', shareB: '' });
   const [simulateTampering, setSimulateTampering] = useState(false);
   const [erResult, setErResult] = useState<any>(null);
 
@@ -93,7 +95,12 @@ export default function App() {
   };
 
   const handleVerifyER = async () => {
-    if (!minted) return;
+    const { nfTokenID, shareA, shareB } = erCredentials;
+    if (!nfTokenID.trim() || !shareA.trim() || !shareB.trim()) {
+      setError('Enter the NFToken ID and two secret shares to verify the directive.');
+      return;
+    }
+
     setLoading(true);
     setError(null);
     try {
@@ -101,9 +108,9 @@ export default function App() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          nfTokenID: minted.nfTokenID,
-          shareA: minted.shares.trustee,
-          shareB: minted.shares.hospital,
+          nfTokenID: nfTokenID.trim(),
+          shareA: shareA.trim(),
+          shareB: shareB.trim(),
           simulateTampering,
         }),
       });
@@ -291,20 +298,20 @@ export default function App() {
                         XRPL Explorer <ExternalLink className="w-3 h-3" />
                       </a>
                     </div>
-                    <p className="truncate text-slate-300">NFTokenID: {minted.nfTokenID}</p>
+                    <p className="break-all text-slate-300">NFTokenID: {minted.nfTokenID}</p>
                     <p className="truncate text-slate-400">IPFS CID: {minted.cid}</p>
                     <p className="truncate text-slate-400">SHA-256: {minted.hash}</p>
                   </div>
 
                   <div className="space-y-2">
                     <p className="font-sans text-xs font-semibold text-slate-300">Shamir's Secret Sharing (2-of-3 Key Fragments):</p>
-                    <div className="p-2 rounded bg-slate-950 border border-slate-800 truncate">
+                    <div className="p-2 rounded bg-slate-950 border border-slate-800 break-all">
                       <span className="text-blue-400">Share 1 (Patient):</span> {minted.shares.patient}
                     </div>
-                    <div className="p-2 rounded bg-slate-950 border border-slate-800 truncate">
+                    <div className="p-2 rounded bg-slate-950 border border-slate-800 break-all">
                       <span className="text-emerald-400">Share 2 (Trustee):</span> {minted.shares.trustee}
                     </div>
-                    <div className="p-2 rounded bg-slate-950 border border-slate-800 truncate">
+                    <div className="p-2 rounded bg-slate-950 border border-slate-800 break-all">
                       <span className="text-amber-400">Share 3 (Hospital):</span> {minted.shares.hospital}
                     </div>
                   </div>
@@ -329,7 +336,7 @@ export default function App() {
               <div>
                 <h2 className="text-base font-semibold">Emergency Room Break-the-Glass Console</h2>
                 <p className="text-sm text-slate-400">
-                  Patient is unconscious. Combine <strong>Share 2 (Legal Trustee)</strong> + <strong>Share 3 (Hospital Node)</strong> to decrypt and verify integrity against XRPL.
+                  Patient is unconscious. Enter the patient's NFToken ID and any two secret shares provided to you. This console does not use patient-portal data.
                 </p>
               </div>
               <label className="flex items-center gap-3 px-4 py-2 rounded-lg bg-red-500/10 border border-red-500/30 cursor-pointer">
@@ -343,9 +350,57 @@ export default function App() {
               </label>
             </div>
 
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+              <label className="space-y-1 text-sm">
+                <span className="text-slate-300">Minted NFToken ID</span>
+                <input
+                  type="text"
+                  value={erCredentials.nfTokenID}
+                  onChange={(e) => {
+                    setErCredentials({ ...erCredentials, nfTokenID: e.target.value });
+                    setErResult(null);
+                  }}
+                  placeholder="Paste the NFToken ID"
+                  disabled={loading}
+                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 font-mono text-xs text-slate-100"
+                />
+              </label>
+              <label className="space-y-1 text-sm">
+                <span className="text-slate-300">Secret share A</span>
+                <textarea
+                  value={erCredentials.shareA}
+                  onChange={(e) => {
+                    setErCredentials({ ...erCredentials, shareA: e.target.value });
+                    setErResult(null);
+                  }}
+                  placeholder="Paste one share (for example, 1:...)"
+                  rows={2}
+                  disabled={loading}
+                  className="w-full resize-y rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 font-mono text-xs text-slate-100"
+                />
+              </label>
+              <label className="space-y-1 text-sm">
+                <span className="text-slate-300">Secret share B</span>
+                <textarea
+                  value={erCredentials.shareB}
+                  onChange={(e) => {
+                    setErCredentials({ ...erCredentials, shareB: e.target.value });
+                    setErResult(null);
+                  }}
+                  placeholder="Paste a different share (for example, 2:...)"
+                  rows={2}
+                  disabled={loading}
+                  className="w-full resize-y rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 font-mono text-xs text-slate-100"
+                />
+              </label>
+              <p className="text-xs text-slate-400 md:col-span-3">
+                Enter each complete share, including its 1:, 2:, or 3: prefix. You can paste the share together with its Patient, Trustee, or Hospital label.
+              </p>
+            </div>
+
             <button
               onClick={handleVerifyER}
-              disabled={!minted || loading}
+              disabled={loading || !erCredentials.nfTokenID.trim() || !erCredentials.shareA.trim() || !erCredentials.shareB.trim()}
               className="px-6 py-3 rounded-lg font-semibold bg-blue-600 hover:bg-blue-500 disabled:opacity-40 transition"
             >
               {loading ? 'Reconstructing Key & Verifying on XRPL...' : 'Decrypt & Verify Against XRPL Ledger'}
@@ -356,18 +411,14 @@ export default function App() {
                 <div className="flex items-center gap-2 text-emerald-400 font-semibold">
                   <CheckCircle2 className="w-5 h-5" /> 100% Cryptographic Integrity Verified Against XRPL
                 </div>
-                <div className="grid grid-cols-2 gap-3 text-sm pt-2">
-                  <div className="grid grid-cols-2 gap-3 text-sm pt-2">
-                  <div className="p-3 rounded bg-slate-950">CPR / Resuscitation: <strong>{erResult.directive.cprResuscitation ? 'CONSENT' : 'DNR (REFUSED)'}</strong></div>
-                  <div className="p-3 rounded bg-slate-950">Blood Transfusions: <strong>{erResult.directive.bloodTransfusion ? 'CONSENT' : 'REFUSED'}</strong></div>
-                  <div className="p-3 rounded bg-slate-950">Artificial Nutrition: <strong>{erResult.directive.artificialNutrition ? 'CONSENT' : 'REFUSED'}</strong></div>
-                  <div className="p-3 rounded bg-slate-950">Invasive Ventilation: <strong>{erResult.directive.invasiveVentilation ? 'CONSENT' : 'REFUSED'}</strong></div>
-                  <div className="p-3 rounded bg-slate-950">Palliative Sedation: <strong>{erResult.directive.palliativeSedation ? 'REQUESTED' : 'NO'}</strong></div>
-                  <div className="p-3 rounded bg-slate-950">Organ Donation: <strong>{erResult.directive.organDonation ? 'CONSENT' : 'REFUSED'}</strong></div>
-                  <div className="p-3 rounded bg-slate-950 col-span-2">Body Donation for Research: <strong>{erResult.directive.bodyDonationResearch ? 'CONSENT' : 'REFUSED'}</strong></div>
+                <div className="space-y-2 pt-2">
+                  <p className="text-sm font-semibold text-slate-200">Verified advance directive</p>
+                  <pre className="overflow-x-auto whitespace-pre-wrap break-words rounded-lg bg-slate-950 p-4 text-xs text-slate-200">
+                    {JSON.stringify(erResult.directive, null, 2)}
+                  </pre>
                 </div>
               </div>
-            </div>)}
+            )}
 
             {erResult && erResult.tampered && (
               <div className="p-5 rounded-xl bg-red-500/10 border border-red-500/50 space-y-3">
