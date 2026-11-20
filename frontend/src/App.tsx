@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import {
   Shield, Wallet, FileText, KeyRound, AlertTriangle, CheckCircle2,
-  Trash2, ExternalLink, Activity, Brain, Lock, RefreshCw
+  Trash2, ExternalLink, Activity, Lock, RefreshCw
 } from 'lucide-react';
 
 const API_URL = 'http://localhost:3001/api';
@@ -27,7 +27,7 @@ interface MintedDAT {
 }
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<'patient' | 'er' | 'ai'>('patient');
+  const [activeTab, setActiveTab] = useState<'patient' | 'er'>('patient');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -54,7 +54,7 @@ export default function App() {
   const [erResult, setErResult] = useState<any>(null);
 
   // AI Act Human-in-the-Loop State
-  const [clinicianSigned, setClinicianSigned] = useState(false);
+
 
   const handleSetupWallets = async () => {
     setLoading(true);
@@ -197,14 +197,6 @@ export default function App() {
             }`}
           >
             <Activity className="w-4 h-4" /> 2. ER Emergency Console (Break-the-Glass)
-          </button>
-          <button
-            onClick={() => setActiveTab('ai')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition ${
-              activeTab === 'ai' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:bg-slate-800'
-            }`}
-          >
-            <Brain className="w-4 h-4" /> 3. XAI & Federated Learning (EU AI Act)
           </button>
         </div>
 
@@ -393,63 +385,7 @@ export default function App() {
           </div>
         )}
 
-        {/* TAB 3: XAI & FEDERATED LEARNING */}
-        {activeTab === 'ai' && (
-          <div className="p-6 rounded-xl bg-slate-900 border border-slate-800 space-y-6">
-            <div>
-              <h2 className="text-base font-semibold">Explainable AI (SHAP) & Federated Learning — EU AI Act Art. 14</h2>
-              <p className="text-sm text-slate-400">
-                Local hospital frailty prediction trained via Federated Learning without moving raw EHR data.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="p-5 rounded-lg bg-slate-950 border border-slate-800 space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-slate-400">Predicted Frailty Risk Score</span>
-                  <span className="text-xl font-bold text-amber-400">84.2% (High Priority)</span>
-                </div>
-                <p className="text-xs text-slate-400 font-semibold pt-2">SHAP Feature Contributions:</p>
-                {[
-                  { label: 'Hospitalizations (Last 12m)', val: '+0.38', w: 'w-4/5' },
-                  { label: 'Polypharmacy Count (>7 meds)', val: '+0.26', w: 'w-3/5' },
-                  { label: 'ADL Functional Decline', val: '+0.20', w: 'w-2/5' },
-                ].map((f) => (
-                  <div key={f.label} className="space-y-1 text-xs">
-                    <div className="flex justify-between">
-                      <span>{f.label}</span>
-                      <span className="text-amber-400 font-mono">{f.val}</span>
-                    </div>
-                    <div className="h-2 bg-slate-800 rounded overflow-hidden">
-                      <div className={`h-full bg-amber-500 ${f.w}`} />
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="p-5 rounded-lg bg-slate-950 border border-slate-800 flex flex-col justify-between space-y-4">
-                <div className="space-y-2 text-sm">
-                  <p className="font-semibold text-slate-200">Clinician Human-in-the-Loop Attestation</p>
-                  <p className="text-slate-400 text-xs">
-                    EU AI Act Art. 14 requires explicit human oversight before initiating Shared Care Planning (Pianificazione Condivisa delle Cure).
-                  </p>
-                </div>
-                <button
-                  onClick={() => setClinicianSigned(true)}
-                  className={`w-full py-3 rounded-lg font-semibold text-sm transition ${
-                    clinicianSigned
-                      ? 'bg-emerald-600/20 text-emerald-300 border border-emerald-500/40'
-                      : 'bg-blue-600 hover:bg-blue-500 text-white'
-                  }`}
-                >
-                  {clinicianSigned
-                    ? '✓ Signed by Clinician DID (AI Act Art. 14 Compliant)'
-                    : 'Sign Human-in-the-Loop Clinical Validation'}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+        
       </main>
     </div>
   );
