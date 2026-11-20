@@ -238,10 +238,13 @@ export default function App() {
 
                 <div className="pt-2 space-y-2">
                   {[
+                    { key: 'cprResuscitation', label: 'Consent to Cardiopulmonary Resuscitation (CPR)' },
+                    { key: 'bloodTransfusion', label: 'Consent to Blood Transfusions & Blood Products' },
                     { key: 'artificialNutrition', label: 'Consent to Artificial Nutrition & Hydration' },
                     { key: 'invasiveVentilation', label: 'Consent to Invasive Mechanical Ventilation' },
                     { key: 'palliativeSedation', label: 'Request Continuous Deep Palliative Sedation' },
                     { key: 'organDonation', label: 'Consent to Post-Mortem Organ Donation' },
+                    { key: 'bodyDonationResearch', label: 'Consent to Post-Mortem Body Donation for Research' },
                   ].map((item) => (
                     <label key={item.key} className="flex items-center justify-between p-3 rounded-lg bg-slate-950 border border-slate-800 cursor-pointer">
                       <span>{item.label}</span>
@@ -362,13 +365,17 @@ export default function App() {
                   <CheckCircle2 className="w-5 h-5" /> 100% Cryptographic Integrity Verified Against XRPL
                 </div>
                 <div className="grid grid-cols-2 gap-3 text-sm pt-2">
+                  <div className="grid grid-cols-2 gap-3 text-sm pt-2">
+                  <div className="p-3 rounded bg-slate-950">CPR / Resuscitation: <strong>{erResult.directive.cprResuscitation ? 'CONSENT' : 'DNR (REFUSED)'}</strong></div>
+                  <div className="p-3 rounded bg-slate-950">Blood Transfusions: <strong>{erResult.directive.bloodTransfusion ? 'CONSENT' : 'REFUSED'}</strong></div>
                   <div className="p-3 rounded bg-slate-950">Artificial Nutrition: <strong>{erResult.directive.artificialNutrition ? 'CONSENT' : 'REFUSED'}</strong></div>
                   <div className="p-3 rounded bg-slate-950">Invasive Ventilation: <strong>{erResult.directive.invasiveVentilation ? 'CONSENT' : 'REFUSED'}</strong></div>
                   <div className="p-3 rounded bg-slate-950">Palliative Sedation: <strong>{erResult.directive.palliativeSedation ? 'REQUESTED' : 'NO'}</strong></div>
                   <div className="p-3 rounded bg-slate-950">Organ Donation: <strong>{erResult.directive.organDonation ? 'CONSENT' : 'REFUSED'}</strong></div>
+                  <div className="p-3 rounded bg-slate-950 col-span-2">Body Donation for Research: <strong>{erResult.directive.bodyDonationResearch ? 'CONSENT' : 'REFUSED'}</strong></div>
                 </div>
               </div>
-            )}
+            </div>)}
 
             {erResult && erResult.tampered && (
               <div className="p-5 rounded-xl bg-red-500/10 border border-red-500/50 space-y-3">
