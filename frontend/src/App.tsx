@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import {
   Shield, Wallet, FileText, KeyRound, AlertTriangle, CheckCircle2,
-  Trash2, ExternalLink, Activity, Lock, RefreshCw
+  Trash2, ExternalLink, Activity, Lock, RefreshCw, Copy, Check
 } from 'lucide-react';
 
 const API_URL = import.meta.env.VITE_API_URL
@@ -54,7 +54,13 @@ export default function App() {
   const [erCredentials, setErCredentials] = useState({ nfTokenID: '', shareA: '', shareB: '' });
   const [simulateTampering, setSimulateTampering] = useState(false);
   const [erResult, setErResult] = useState<any>(null);
+const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
+  const handleCopy = (key: string, text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedKey(key);
+    setTimeout(() => setCopiedKey(null), 1500);
+  };
   // AI Act Human-in-the-Loop State
 
 
@@ -298,22 +304,61 @@ export default function App() {
                         XRPL Explorer <ExternalLink className="w-3 h-3" />
                       </a>
                     </div>
-                    <p className="break-all text-slate-300">NFTokenID: {minted.nfTokenID}</p>
+                    <div className="flex items-start justify-between gap-2">
+  <p className="font-mono text-xs text-slate-300 break-all">
+    <span className="text-slate-400">NFTokenID:</span> {minted.nfTokenID}
+  </p>
+  <button
+    type="button"
+    onClick={() => handleCopy('nft', minted.nfTokenID)}
+    className="shrink-0 inline-flex items-center gap-1 px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-xs text-slate-200 border border-slate-700 transition"
+  >
+    {copiedKey === 'nft' ? (
+      <>
+        <Check className="w-3.5 h-3.5 text-emerald-400" /> Copied
+      </>
+    ) : (
+      <>
+        <Copy className="w-3.5 h-3.5" /> Copy
+      </>
+    )}
+  </button>
+</div>
                     <p className="truncate text-slate-400">IPFS CID: {minted.cid}</p>
                     <p className="truncate text-slate-400">SHA-256: {minted.hash}</p>
                   </div>
 
                   <div className="space-y-2">
                     <p className="font-sans text-xs font-semibold text-slate-300">Shamir's Secret Sharing (2-of-3 Key Fragments):</p>
-                    <div className="p-2 rounded bg-slate-950 border border-slate-800 break-all">
-                      <span className="text-blue-400">Share 1 (Patient):</span> {minted.shares.patient}
-                    </div>
-                    <div className="p-2 rounded bg-slate-950 border border-slate-800 break-all">
-                      <span className="text-emerald-400">Share 2 (Trustee):</span> {minted.shares.trustee}
-                    </div>
-                    <div className="p-2 rounded bg-slate-950 border border-slate-800 break-all">
-                      <span className="text-amber-400">Share 3 (Hospital):</span> {minted.shares.hospital}
-                    </div>
+                    {[
+  { id: 'share1', label: 'Share 1 (Patient):', color: 'text-blue-400', value: minted.shares.patient },
+  { id: 'share2', label: 'Share 2 (Trustee):', color: 'text-emerald-400', value: minted.shares.trustee },
+  { id: 'share3', label: 'Share 3 (Hospital):', color: 'text-amber-400', value: minted.shares.hospital },
+].map((s) => (
+  <div
+    key={s.id}
+    className="p-3 rounded-lg bg-slate-950 border border-slate-800 flex items-start justify-between gap-2"
+  >
+    <p className="font-mono text-xs text-slate-200 break-all">
+      <span className={`${s.color} font-semibold`}>{s.label}</span> {s.value}
+    </p>
+    <button
+      type="button"
+      onClick={() => handleCopy(s.id, s.value)}
+      className="shrink-0 inline-flex items-center gap-1 px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-xs text-slate-200 border border-slate-700 transition"
+    >
+      {copiedKey === s.id ? (
+        <>
+          <Check className="w-3.5 h-3.5 text-emerald-400" /> Copied
+        </>
+      ) : (
+        <>
+          <Copy className="w-3.5 h-3.5" /> Copy
+        </>
+      )}
+    </button>
+  </div>
+))}
                   </div>
 
                   <button
@@ -413,9 +458,61 @@ export default function App() {
                 </div>
                 <div className="space-y-2 pt-2">
                   <p className="text-sm font-semibold text-slate-200">Verified advance directive</p>
-                  <pre className="overflow-x-auto whitespace-pre-wrap break-words rounded-lg bg-slate-950 p-4 text-xs text-slate-200">
+                 {/* Intestazione Paziente e Fiduciario */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
+                  <div className="p-3.5 rounded-lg bg-slate-950/80 border border-slate-800">
+                    <span className="text-xs uppercase tracking-wider text-slate-400 block">Patient</span>
+                    <span className="text-sm font-semibold text-white">{erResult.directive.patientName}</span>
+                  </div>
+                  <div className="p-3.5 rounded-lg bg-slate-950/80 border border-slate-800">
+                    <span className="text-xs uppercase tracking-wider text-slate-400 block">Legal Trustee (Fiduciario)</span>
+                    <span className="text-sm font-semibold text-white">{erResult.directive.trusteeName}</span>
+                  </div>
+                </div>
+
+                {/* Griglia Direttive Cliniche ad alto contrasto */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                  {[
+                    { key: 'cprResuscitation', label: 'CPR / Resuscitation', yes: 'CONSENT', no: 'DNR (REFUSED)' },
+                    { key: 'bloodTransfusion', label: 'Blood Transfusions', yes: 'CONSENT', no: 'REFUSED' },
+                    { key: 'artificialNutrition', label: 'Artificial Nutrition & Hydration', yes: 'CONSENT', no: 'REFUSED' },
+                    { key: 'invasiveVentilation', label: 'Invasive Mechanical Ventilation', yes: 'CONSENT', no: 'REFUSED' },
+                    { key: 'palliativeSedation', label: 'Deep Palliative Sedation', yes: 'REQUESTED', no: 'NO' },
+                    { key: 'organDonation', label: 'Post-Mortem Organ Donation', yes: 'CONSENT', no: 'REFUSED' },
+                    { key: 'bodyDonationResearch', label: 'Body Donation for Research', yes: 'CONSENT', no: 'REFUSED' },
+                  ]
+                    .filter((item) => erResult.directive[item.key] !== undefined)
+                    .map((item) => {
+                      const allowed = Boolean(erResult.directive[item.key]);
+                      return (
+                        <div
+                          key={item.key}
+                          className="flex items-center justify-between p-3.5 rounded-lg bg-slate-950 border border-slate-800"
+                        >
+                          <span className="text-sm text-slate-200 font-medium">{item.label}</span>
+                          <span
+                            className={`px-2.5 py-1 rounded-full text-xs font-bold tracking-wide border ${
+                              allowed
+                                ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/40'
+                                : 'bg-red-500/15 text-red-300 border-red-500/40'
+                            }`}
+                          >
+                            {allowed ? item.yes : item.no}
+                          </span>
+                        </div>
+                      );
+                    })}
+                </div>
+
+                {/* JSON FHIR tecnico richiudibile per i giudici */}
+                <details className="pt-2">
+                  <summary className="text-xs text-slate-400 hover:text-slate-200 cursor-pointer select-none">
+                    Inspect Raw HL7 FHIR JSON ({erResult.directive.resourceType})
+                  </summary>
+                  <pre className="mt-2 p-3 rounded-lg bg-slate-950 border border-slate-800 text-xs text-slate-300 overflow-x-auto">
                     {JSON.stringify(erResult.directive, null, 2)}
                   </pre>
+                </details>
                 </div>
               </div>
             )}
